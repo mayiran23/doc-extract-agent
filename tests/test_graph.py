@@ -6,7 +6,7 @@ from langgraph.graph import END
 from agent.graph import (
     NODE_TEMPLATE,
     NODE_READING,
-    NODE_CITATION,
+    NODE_META,
     NODE_EXTRACTION,
     NODE_VALIDATION,
     NODE_REFLECTION,
@@ -32,7 +32,7 @@ class TestGraphCompilation:
         expected = {
             NODE_TEMPLATE,
             NODE_READING,
-            NODE_CITATION,
+            NODE_META,
             NODE_EXTRACTION,
             NODE_VALIDATION,
             NODE_REFLECTION,
