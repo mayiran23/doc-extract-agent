@@ -61,12 +61,13 @@ def _analyze_from_excel(state: ExtractionState) -> list:
         f"## 样本数据\n{sample_str}\n\n"
         f"为每列返回 JSON，字段：col_name（必须与上述列名完全一致）、"
         f"semantic_type、unit、description、expected_range。\n"
-        f"semantic_type 取值：substrate_property | condition | gas_production | metadata\n"
+        f"semantic_type 取值：sample_id | test_item | measured_value | "
+        f"limit_value | judgment | metadata\n"
         f"只返回 JSON 数组，不要增减列，不要改名。"
     )
 
     system = (
-        "你是一名文献数据提取模板的分析专家。"
+        "你是一名检测报告字段模板的分析专家。"
         "列名必须原样保留，不得改名、合并或删减。只返回 JSON 数组。"
     )
     try:
@@ -108,11 +109,12 @@ def _analyze_from_nl(state: ExtractionState) -> list:
     prompt = (
         f"请根据以下自然语言描述，生成合适的列定义：\n\n"
         f"用户需求：{nl_query}\n\n"
-        f"请为该需求生成完整的列定义 JSON 数组。如果涉及厌氧发酵/沼气/AD 领域，"
-        f"考虑常见参数如 TS、VS、pH、温度、沼气产量、甲烷含量等。"
+        f"请为该需求生成完整的列定义 JSON 数组。如果是检测报告场景，"
+        f"常见字段包括：样品编号、检测项目、检测方法、检出限、检测值、单位、"
+        f"标准限值、判定结论、检测日期。"
     )
 
-    system = "你是一名文献数据提取模板的分析专家。只返回 JSON 数组。"
+    system = "你是一名检测报告字段模板的分析专家。只返回 JSON 数组。"
     response = call_llm(prompt, system=system)
     columns = parse_json_response(response)
 

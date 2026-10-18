@@ -1,125 +1,130 @@
-# 单据结构化提取 Agent
+# 检测报告数据归档 Agent
 
-基于 LangGraph + DeepSeek 的非结构化文档字段提取系统。上传 Excel 模板（或自然语言描述要哪些字段）+ PDF 单据，自动识别并抽取字段，输出结构化表格。
+把一堆格式各异的检测报告 PDF，自动整理成一张可入库的 Excel 表。
 
-> **来源说明**：本项目架构参考 [gudaochangci/literature-extraction-agent](https://github.com/gudaochangci/literature-extraction-agent)（MIT），
-> 在此基础上将业务域从「学术文献数据提取」改造为「单据字段提取」，并重写了校验规则与提示词。原始版权声明见 LICENSE。
->
-> **TO-DO（自己填）**：业务域 = ______（例如：供应商报价单比价 / 检测报告数据归档 / 合同关键条款提取）
+基于 LangGraph 构建的字段提取流水线，核心是**校验不通过就回头重抽**——LLM 抽错的数据不会静默流进结果表。
+
+---
+
+## 为什么做这个
+
+检测机构、质检部门、生产企业的实验室，每天产出大量 PDF 检测报告。这些报告格式由不同仪器、不同模板生成，字段位置不固定，但最终都要录进同一张台账表。
+
+人工做法是：打开 PDF，找到「样品编号」「检测项目」「检测值」「标准限值」「判定」这几项，一个个复制到 Excel。一份报告十几行数据，几十份就是半天，而且抄错数字没人发现。
+
+这个项目要解决的就是这一段：**给定一张目标表头，把 PDF 里的对应字段抽出来，抽不准的标出来让人复核，而不是假装抽对了。**
+
+## 它做什么
+
+输入两样东西：
+
+1. **字段定义** —— 一个 Excel 表头，或者一句「我要样品编号、检测项目、检测值、单位、标准限值、判定结论」
+2. **报告 PDF** —— 一份或多份
+
+输出：一张填好的 Excel 表，每行一个检测项目，附带来源页码；校验不过的行会被标记，而不是丢弃。
 
 ## 架构
 
+六个节点串行，最后一段是带次数上限的回环：
+
 ```
-template_agent → reading_agent → citation_agent → extraction_agent
-                                                        │
-                                              ┌─────────┼──────────┐
-                                              │ pass     │ reflect  │
-                                              ▼          ▼          │
-                                             END   reflection_engine│
-                                                     │             │
-                                                     └───────loop──┘
+template_agent → reading_agent → meta_agent → extraction_agent
+                                                    │
+                                          ┌─────────┼──────────┐
+                                          │ pass     │ reflect  │
+                                          ▼          ▼          │
+                                         END   reflection_engine│
+                                                     │          │
+                                                     └────loop──┘
 ```
 
-**6 个 Node（串行，条件循环）：**
+| 节点 | 干什么 |
+|---|---|
+| `template_agent` | 把 Excel 表头或自然语言需求，翻译成带语义类型和合理范围的列定义 |
+| `reading_agent` | PDF → 带页码标记的纯文本，顺带派生文档 ID |
+| `meta_agent` | 抽取报告元信息：报告编号、检测机构、样品编号、检测日期、依据标准 |
+| `extraction_agent` | 分块全量提取，每块独立调 LLM，再合并去重 |
+| `validation_engine` | 四级检查，规则优先、LLM 兜底 |
+| `reflection_engine` | 分析失败原因，生成具体的重读指令，回到提取节点重来 |
 
-| Node | 职责 |
-|------|------|
-| Template Agent | 理解用户数据需求 → 列定义（Excel 模式列名原样保留） |
-| Reading Agent | PDF → 纯文本（pdfplumber，全文保留） |
-| Citation Agent | 提取文献元数据 → 标准引文格式（含 DOI，Crossref 补全） |
-| Extraction Agent | **分块全量提取**：全文均匀分块 → 每块 LLM 提取 → 合并去重 |
-| Validation Engine | 四级规则检查（completeness/plausibility/consistency/traceability） |
-| Reflection Engine | 分析验证失败原因 → 生成修正策略 → 循环重试 |
+## 三个设计决策
+
+### 1. 为什么用图而不是 Chain
+
+因为**校验失败必须能回到上一步**。
+
+一条链跑完就结束了，没法表达「这份报告第 3 行的判定结论和限值矛盾，回去重抽」。用 LangGraph 的价值不在「画了个图」，而在这条回边是业务真的需要的。
+
+回环有硬上限（`MAX_REFLECTION_ROUNDS`，默认 3）。到顶还不过，就走 `force_end` 输出带标记的结果——**宁可交一份标了疑问的表，也不让模型无限重试烧钱**。
+
+### 2. 为什么规则校验是纯函数
+
+`validation_engine` 里的 `_rule_check` 不调 LLM、不读文件、不访问网络，输入是行数据和列定义，输出是问题列表。
+
+好处有两个：
+
+- **能在没有 API key、没有网络的环境下跑测试**。核心逻辑的正确性不依赖模型状态。
+- 规则检查毫秒级返回，只有它报了 error 才触发 LLM 深度检查。省下来的调用次数很可观。
+
+### 3. 为什么规则在前、LLM 在后
+
+规则能判的（数值为负、必填为空、判定与限值矛盾），交给代码，确定性、可复现。
+
+规则判不了的（这段文字到底对应哪个检测项目、跨页的表格是不是同一张），才交给 LLM。
+
+反过来做——先让 LLM 检查一遍——既慢又贵，而且同样的输入两次可能给不同结论。
+
+## 四级校验
+
+| 等级 | 检查什么 | 例子 |
+|---|---|---|
+| completeness | 必填字段是否齐全 | 有检测值但没有检测项目名 |
+| plausibility | 数值是否在物理可能范围内 | 检测值为负；单位不在白名单内 |
+| consistency | 同一行内部是否自洽 | 检测值 0.8 超过限值 0.5，判定却写「合格」 |
+| traceability | 每个值能否追到出处 | 有数据但没记页码 |
+
+其中 `consistency` 是这套流水线最有价值的一级——**判定结论和限值的矛盾，是人工录入最容易出错、又最难被发现的地方**。
+
+## 技术栈
+
+| 层 | 选型 | 为什么 |
+|---|---|---|
+| 编排 | LangGraph | 需要条件边和回环 |
+| 模型 | DeepSeek（OpenAI 兼容接口） | 中文报告理解好，成本低；接口兼容，换模型只改配置 |
+| PDF 解析 | pdfplumber | 保留表格结构，比纯文本抽取更适合报告类文档 |
+| 表格输出 | openpyxl | 直接写 xlsx，不做中间格式 |
+| 界面 | Streamlit | 四步向导，够用，不引入前端工程 |
+| 测试 | pytest | 规则层可完全脱网测试 |
 
 ## 快速开始
 
-### 1. 安装依赖
-
 ```bash
 pip install -r requirements.txt
+cp .env.example .env          # 填入 DEEPSEEK_API_KEY
+
+streamlit run app.py           # Web 界面
+# 或
+python main.py --template template.xlsx --pdfs ./reports/ -o result.xlsx
 ```
-
-### 2. 配置 API Key
-
-```bash
-cp .env.example .env
-# 编辑 .env，填入 DeepSeek API Key
-```
-
-```
-DEEPSEEK_API_KEY=sk-你的key
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-MODEL_NAME=deepseek-v4-flash
-```
-
-> 兼容 OpenAI API，如需使用 OpenAI，修改 `DEEPSEEK_BASE_URL` 和 `MODEL_NAME` 即可。
-
-### 3. 启动
-
-**Streamlit Web UI（推荐）：**
-
-```bash
-streamlit run app.py
-```
-
-四步流程：定义需求 → 确认列定义 → 上传 PDF → 下载 Excel。
-
-**命令行：**
-
-```bash
-# 自然语言描述需求
-python main.py --query "提取TS、VS、pH、温度、沼气产量" --pdfs ./papers/
-
-# 上传 Excel 模板
-python main.py --template template.xlsx --pdfs ./papers/ -o result.xlsx
-```
-
-## 提取策略
-
-**分块全量提取**（不依赖正则定位数据位置）：
-
-```
-全文 → 均匀分块(每~10K) → 每块独立LLM提取 → 合并去重 → 输出
-```
-
-- 摘要在第 1 块 → LLM 自己找到
-- 结论在最后一块 → LLM 自己找到
-- 正文表格在中间 → LLM 自己找到
 
 ## 项目结构
 
 ```
-├── app.py                    # Streamlit UI 入口
-├── main.py                   # CLI 批量处理入口
-├── config/settings.py        # 全局配置
-├── agent/
-│   ├── state.py              # 状态定义（TypedDict）
-│   ├── graph.py              # LangGraph 图构建
-│   ├── nodes/                # 6 个 Agent Node
-│   │   ├── template_agent.py
-│   │   ├── reading_agent.py
-│   │   ├── citation_agent.py
-│   │   ├── extraction_agent.py
-│   │   ├── validation_engine.py
-│   │   └── reflection_engine.py
-│   └── tools/                # 工具层
-│       ├── pdf_parser.py     # pdfplumber 封装
-│       ├── excel_reader.py   # Excel 读取
-│       ├── excel_writer.py   # 格式化 Excel 输出
-│       └── llm_utils.py      # LLM 调用 + JSON 解析
-├── prompts/                  # 提示词模板
-├── ui/                       # Streamlit 组件
-└── tests/                    # 84 个测试
+agent/
+├── state.py                   # 共享状态（TypedDict）
+├── graph.py                   # 图的构建与条件路由
+├── nodes/                     # 六个节点，一个文件一个
+└── tools/                     # PDF 解析、Excel 读写、LLM 调用
+prompts/                       # 提示词与代码分离，便于迭代
+ui/                            # Streamlit 组件
+tests/                         # 规则层单测 + 图集成测试
 ```
 
-## 技术栈
+## 已知局限
 
-- **LangGraph** — Agent 编排
-- **langchain-openai** — LLM 调用（兼容 OpenAI/DeepSeek）
-- **pdfplumber** — PDF 文本提取
-- **openpyxl** — Excel 读写
-- **Streamlit** — Web UI
+- **扫描版 PDF 不支持**：没有文本层直接跳过，走 OCR 是另一条链路
+- **跨页表格**：同一张表被分页切断时，合并依赖 LLM 判断，偶有漏行
+- **单位换算**：只做识别不做换算，报告里写 μg/L、模板要 mg/L 时会原样保留并在 notes 标注
+- **并发**：单文件串行处理，多份报告是排队跑的
 
-## License
-
-MIT
+后续优先级：OCR 兜底 → 跨页表格合并 → 批量并发。

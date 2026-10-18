@@ -32,7 +32,7 @@ def render_sidebar():
         st.slider("最大反射轮次", 1, 5, 3, key="max_rounds")
 
         st.divider()
-        st.caption("文献数据提取 Agent v1.0")
+        st.caption("检测报告数据提取 Agent v1.0")
         st.caption("基于 LangGraph")
 
 
@@ -53,7 +53,7 @@ def render_template_step() -> dict:
             return {"action": "analyze_template", "source": "excel"}
 
     with tab_b:
-        nl = st.text_area("描述需要提取的数据", placeholder="例如：提取TS、VS、pH、温度、沼气产量...",
+        nl = st.text_area("描述需要提取的数据", placeholder="例如：提取样品编号、检测项目、检测值、单位、标准限值、判定结论...",
                            height=100, key="nl_input")
         if nl:
             st.session_state["nl_query"] = nl
@@ -108,13 +108,13 @@ def render_column_confirmation() -> dict:
 
 def render_pdf_upload_step() -> dict:
     """Step 3: 上传 PDF。"""
-    st.header("Step 3: 上传 PDF 文献")
+    st.header("Step 3: 上传 PDF 报告")
 
-    uploaded = st.file_uploader("选择 PDF 文献（可多选）", type=["pdf"],
+    uploaded = st.file_uploader("选择 PDF 报告（可多选）", type=["pdf"],
                                 accept_multiple_files=True, key="pdf_up")
     if uploaded:
         st.session_state["uploaded_pdfs"] = uploaded
-        st.success(f"已选择 {len(uploaded)} 篇文献")
+        st.success(f"已选择 {len(uploaded)} 份报告")
         for f in uploaded:
             st.text(f"  {f.name} ({f.size // 1024} KB)")
 
@@ -160,7 +160,7 @@ def render_results():
     total = len(st.session_state.get("uploaded_pdfs", []))
 
     col1, col2 = st.columns(2)
-    col1.metric("处理文献数", total)
+    col1.metric("处理报告数", total)
     col2.metric("提取数据行", len(results))
 
     if results:

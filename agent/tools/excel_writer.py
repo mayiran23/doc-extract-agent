@@ -49,7 +49,7 @@ class ExcelWriter:
         rows: List[Dict],
         columns: List[Dict],
         output_path: str,
-        sheet_name: str = "文献数据提取",
+        sheet_name: str = "检测报告数据提取",
     ) -> str:
         """将提取的数据写入格式化 Excel 文件。
 

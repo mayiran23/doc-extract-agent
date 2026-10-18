@@ -1,4 +1,4 @@
-"""Streamlit 应用 — 文献数据提取 Agent UI。
+"""Streamlit 应用 — 检测报告数据提取 Agent UI。
 
 启动方式: streamlit run app.py
 """
@@ -23,7 +23,7 @@ if not _ENV_PATH.exists():
 if not os.getenv("DEEPSEEK_API_KEY"):
     print("[提示] DEEPSEEK_API_KEY 未设置 — 在侧边栏输入或创建 .env 文件")
 
-st.set_page_config(page_title="文献数据提取 Agent", layout="wide")
+st.set_page_config(page_title="检测报告数据提取 Agent", layout="wide")
 
 from ui.components import (
     render_column_confirmation,
@@ -38,7 +38,7 @@ from ui.session_state import init_session_state
 init_session_state()
 render_sidebar()
 
-st.title("LangGraph 文献数据提取 Agent")
+st.title("LangGraph 检测报告数据提取 Agent")
 st.markdown("从学术 PDF 中自动提取结构化数据，生成格式化 Excel 表格")
 
 
@@ -108,7 +108,7 @@ def _run_extraction():
         os.makedirs("output", exist_ok=True)
         output_path = os.path.join(
             "output",
-            f"文献数据提取_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            f"检测报告数据提取_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
         )
         writer.write(all_rows, columns, output_path)
         st.session_state["output_path"] = output_path

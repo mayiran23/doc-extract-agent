@@ -7,9 +7,9 @@ INIT_STATE = {
     "natural_language_query": "提取TS和pH",
     "template_source": "natural_language",
     "columns": [
-        {"col_name": "TS", "semantic_type": "substrate_property",
+        {"col_name": "铅含量", "semantic_type": "measured_value",
          "unit": "%", "description": "总固体", "expected_range": "0-100"},
-        {"col_name": "pH", "semantic_type": "condition",
+        {"col_name": "pH", "semantic_type": "measured_value",
          "unit": "", "description": "pH值", "expected_range": "0-14"},
     ],
     "template_confirmed": True,

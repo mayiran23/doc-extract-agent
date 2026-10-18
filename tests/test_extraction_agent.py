@@ -15,14 +15,14 @@ from agent.nodes.extraction_agent import (
 MOCK_ROWS_RESPONSE = json.dumps([
     {
         "sequence_id": "A1",
-        "values": {"TS": "8.5", "VS": "82.3", "pH": "7.2", "温度(°C)": "37"},
+        "values": {"铅含量": "8.5", "镉含量": "82.3", "pH": "7.2", "温度(°C)": "37"},
         "source_table": "Table 1",
         "source_figure": "",
         "notes": "",
     },
     {
         "sequence_id": "A2",
-        "values": {"TS": "8.5", "VS": "82.3", "pH": "7.2", "温度(°C)": "37"},
+        "values": {"铅含量": "8.5", "镉含量": "82.3", "pH": "7.2", "温度(°C)": "37"},
         "source_table": "Table 2",
         "source_figure": "",
         "notes": "T2 treatment",
@@ -30,10 +30,10 @@ MOCK_ROWS_RESPONSE = json.dumps([
 ])
 
 SAMPLE_COLS = [
-    {"col_name": "TS", "semantic_type": "substrate_property", "unit": "%"},
-    {"col_name": "VS", "semantic_type": "substrate_property", "unit": "%"},
-    {"col_name": "pH", "semantic_type": "condition", "unit": ""},
-    {"col_name": "温度(°C)", "semantic_type": "condition", "unit": "°C"},
+    {"col_name": "铅含量", "semantic_type": "measured_value", "unit": "%"},
+    {"col_name": "镉含量", "semantic_type": "measured_value", "unit": "%"},
+    {"col_name": "pH", "semantic_type": "measured_value", "unit": ""},
+    {"col_name": "温度(°C)", "semantic_type": "measured_value", "unit": "°C"},
 ]
 
 
@@ -113,7 +113,7 @@ class TestMergeAndDeduplicate:
     def test_different_sequences_kept(self):
         """不同 sequence_id 的行应全部保留。"""
         rows = [
-            {"sequence_id": "A1", "values": {"TS": "8.5"}},
+            {"sequence_id": "A1", "values": {"铅含量": "8.5"}},
             {"sequence_id": "B1", "values": {"pH": "7.2"}},
         ]
         merged = _merge_and_deduplicate(rows, SAMPLE_COLS, "")
@@ -122,12 +122,12 @@ class TestMergeAndDeduplicate:
     def test_same_sequence_merged(self):
         """相同 sequence_id 的行应合并值。"""
         rows = [
-            {"sequence_id": "A1", "values": {"TS": "8.5", "pH": ""}},
-            {"sequence_id": "A1", "values": {"TS": "", "pH": "7.2"}},
+            {"sequence_id": "A1", "values": {"铅含量": "8.5", "pH": ""}},
+            {"sequence_id": "A1", "values": {"铅含量": "", "pH": "7.2"}},
         ]
         merged = _merge_and_deduplicate(rows, SAMPLE_COLS, "")
         assert len(merged) == 1
-        assert merged[0]["values"]["TS"] == "8.5"
+        assert merged[0]["values"]["铅含量"] == "8.5"
         assert merged[0]["values"]["pH"] == "7.2"
 
 
@@ -135,19 +135,19 @@ class TestPostProcess:
     """后处理逻辑测试。"""
 
     def test_paper_id_injection(self):
-        rows = [{"values": {"TS": "8.5"}}]
+        rows = [{"values": {"铅含量": "8.5"}}]
         result = _post_process(rows, "paper_001", SAMPLE_COLS)
         assert result[0]["paper_id"] == "paper_001"
 
     def test_missing_columns_filled(self):
-        rows = [{"values": {"TS": "8.5"}}]
+        rows = [{"values": {"铅含量": "8.5"}}]
         result = _post_process(rows, "test", SAMPLE_COLS)
         assert result[0]["values"].get("pH") == ""
 
     def test_sequence_numbering(self):
         rows = [
-            {"values": {"TS": "8.5"}, "source_table": "Table 1"},
-            {"values": {"VS": "82.3"}, "source_table": "Table 1"},
+            {"values": {"铅含量": "8.5"}, "source_table": "Table 1"},
+            {"values": {"镉含量": "82.3"}, "source_table": "Table 1"},
             {"values": {"pH": "7.2"}, "source_table": "Table 2"},
         ]
         result = _post_process(rows, "test", SAMPLE_COLS)
@@ -156,11 +156,11 @@ class TestPostProcess:
         assert result[2]["sequence_id"] == "B1"
 
     def test_figure_reading_annotation(self):
-        rows = [{"values": {"TS": "85"}, "source_figure": "Figure 3", "notes": ""}]
+        rows = [{"values": {"铅含量": "85"}, "source_figure": "Figure 3", "notes": ""}]
         result = _post_process(rows, "test", SAMPLE_COLS)
         assert "目测读取" in result[0]["notes"]
 
     def test_no_fabrication(self):
-        rows = [{"values": {"TS": "8.5"}}]
+        rows = [{"values": {"铅含量": "8.5"}}]
         result = _post_process(rows, "test", SAMPLE_COLS)
-        assert result[0]["values"]["VS"] == ""
+        assert result[0]["values"]["镉含量"] == ""

@@ -19,20 +19,20 @@ class TestColumnDef:
 
     def test_minimal_creation(self):
         """仅 col_name 即可创建 ColumnDef。"""
-        col = ColumnDef(col_name="TS")
-        assert col["col_name"] == "TS"
+        col = ColumnDef(col_name="铅含量")
+        assert col["col_name"] == "铅含量"
 
     def test_full_creation(self):
         """所有字段的完整创建。"""
         col = ColumnDef(
-            col_name="TS",
-            semantic_type="substrate_property",
+            col_name="铅含量",
+            semantic_type="measured_value",
             unit="%",
             description="总固体含量",
             expected_range="0-100",
         )
-        assert col["col_name"] == "TS"
-        assert col["semantic_type"] == "substrate_property"
+        assert col["col_name"] == "铅含量"
+        assert col["semantic_type"] == "measured_value"
         assert col["unit"] == "%"
         assert col["description"] == "总固体含量"
         assert col["expected_range"] == "0-100"
@@ -50,16 +50,16 @@ class TestDataRow:
 
     def test_minimal_creation(self):
         """仅 paper_id 和 values 即可创建 DataRow。"""
-        row = DataRow(paper_id="test", values={"TS": "8.5"})
+        row = DataRow(paper_id="test", values={"铅含量": "8.5"})
         assert row["paper_id"] == "test"
-        assert row["values"] == {"TS": "8.5"}
+        assert row["values"] == {"铅含量": "8.5"}
 
     def test_full_creation(self):
         """所有字段的完整创建。"""
         row = DataRow(
             paper_id="paper_001",
             sequence_id="A1",
-            values={"TS": "8.5", "pH": "7.2"},
+            values={"铅含量": "8.5", "pH": "7.2"},
             source_table="Table 1",
             source_figure="",
             notes="从Figure 3目测读取，可能存在±误差",
@@ -70,8 +70,8 @@ class TestDataRow:
 
     def test_empty_values(self):
         """未报告的数据项应为空字符串。"""
-        row = DataRow(paper_id="test", values={"TS": "", "pH": "7.2"})
-        assert row["values"]["TS"] == ""
+        row = DataRow(paper_id="test", values={"铅含量": "", "pH": "7.2"})
+        assert row["values"]["铅含量"] == ""
 
 
 class TestValidationIssue:
@@ -93,9 +93,9 @@ class TestValidationIssue:
         """warning 级别的验证问题。"""
         issue = ValidationIssue(
             level="completeness",
-            column="VS",
+            column="镉含量",
             row_index=1,
-            description="VS列在第2行为空，但文献Table 1中报告了该值",
+            description="VS列在第2行为空，但报告Table 1中报告了该值",
             severity="warning",
         )
         assert issue["severity"] == "warning"
@@ -176,17 +176,17 @@ class TestExtractionState:
         """State 可以序列化为 JSON（支持 LangGraph checkpoint 持久化）。"""
         state = ExtractionState(**base_state)
         state["columns"] = [
-            ColumnDef(col_name="TS", semantic_type="substrate_property", unit="%")
+            ColumnDef(col_name="铅含量", semantic_type="measured_value", unit="%")
         ]
         state["all_rows"] = [
-            DataRow(paper_id="test", values={"TS": "8.5"})
+            DataRow(paper_id="test", values={"铅含量": "8.5"})
         ]
 
         serialized = json.dumps(state)
         deserialized = json.loads(serialized)
 
-        assert deserialized["columns"][0]["col_name"] == "TS"
-        assert deserialized["all_rows"][0]["values"]["TS"] == "8.5"
+        assert deserialized["columns"][0]["col_name"] == "铅含量"
+        assert deserialized["all_rows"][0]["values"]["铅含量"] == "8.5"
 
     def test_extraction_hints_lifecycle(self, base_state):
         """extraction_hints 的生命周期：初始为空，Reflection 后填充。"""

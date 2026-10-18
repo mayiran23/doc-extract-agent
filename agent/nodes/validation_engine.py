@@ -59,33 +59,34 @@ def _rule_check(rows: List[dict], columns: List[dict]) -> List[dict]:
                 "severity": "warning",
             })
 
-        # Plausibility: pH
-        ph = values.get("pH", "")
-        if ph:
-            try:
-                ph_f = float(ph)
-                if ph_f < 0 or ph_f > 14:
-                    issues.append({
-                        "level": "plausibility", "column": "pH", "row_index": i,
-                        "description": f"pH值 {ph_f} 超出合理范围 (0-14)",
-                        "severity": "error",
-                    })
-            except ValueError:
-                pass
+        # Plausibility: 数值型字段非负 + 期望范围
+        for col in columns:
+            cn = col.get("col_name", "")
+            val = values.get(cn, "")
+            if not val:
+                continue
 
-        # Plausibility: TS
-        ts = values.get("TS", "")
-        if ts:
-            try:
-                ts_f = float(ts)
-                if ts_f < 0 or ts_f > 100:
-                    issues.append({
-                        "level": "plausibility", "column": "TS", "row_index": i,
-                        "description": f"TS值 {ts_f} 超出合理范围 (0-100%)",
-                        "severity": "error",
-                    })
-            except ValueError:
-                pass
+            num = _to_float(val)
+            if num is None:
+                continue
+
+            # 检测值/限值/金额类字段不允许为负
+            if col.get("semantic_type") in ("measured_value", "limit_value") and num < 0:
+                issues.append({
+                    "level": "plausibility", "column": cn, "row_index": i,
+                    "description": f"{cn} 为负值 ({num})，检测值不应为负",
+                    "severity": "error",
+                })
+                continue
+
+            # 列定义里给了合理范围就校验（如 "0-100"、"0.001-9999"）
+            rng = col.get("expected_range", "")
+            if rng and not _in_range(num, rng):
+                issues.append({
+                    "level": "plausibility", "column": cn, "row_index": i,
+                    "description": f"{cn} 的值 {num} 超出合理范围 ({rng})",
+                    "severity": "error",
+                })
 
         # Traceability: 有数据但无来源
         if any(values.get(cn) for cn in col_names):
@@ -105,6 +106,24 @@ def _rule_check(rows: List[dict], columns: List[dict]) -> List[dict]:
         })
 
     return issues
+
+
+def _to_float(val) -> float:
+    """把提取值转成浮点数，转不了返回 None（"未检出"、">100" 等都属于转不了）。"""
+    try:
+        s = str(val).strip().replace(",", "")
+        return float(s)
+    except (TypeError, ValueError):
+        return None
+
+
+def _in_range(num: float, rng: str) -> bool:
+    """判断数值是否落在 "min-max" 形式的区间内；区间写错则放行，不误报。"""
+    try:
+        low, high = [float(x.strip()) for x in str(rng).split("-", 1)]
+        return low <= num <= high
+    except (ValueError, TypeError):
+        return True
 
 
 def _llm_check(rows: List[dict], columns: List[dict], pdf_text: str) -> List[dict]:

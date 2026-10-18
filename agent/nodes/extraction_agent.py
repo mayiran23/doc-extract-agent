@@ -1,10 +1,10 @@
-"""Extraction Agent — 分块全量提取 + 文献结构分析。
+"""Extraction Agent — 分块全量提取 + 报告结构分析。
 
 策略（不依赖正则定位，由 LLM 自主判断数据所在）：
-1. 文献结构分析：让 LLM 先理解论文的实验设计和数据分布
+1. 报告结构分析：让 LLM 先理解报告的版式布局和检测项目分布
 2. 简单字符分块：每 ~10K 字符一块，不做智能筛选
-3. 逐块提取：每块独立调用 LLM 提取数据
-4. 合并去重：汇总所有块的结果，基于实验组去重
+3. 逐块提取：每块独立调用 LLM 提取检测项数据
+4. 合并去重：汇总所有块的结果，基于样品号 + 检测项目去重
 """
 
 from typing import List
@@ -27,7 +27,7 @@ def extraction_agent(state: ExtractionState) -> dict:
     chunk_size = settings.pdf_chunk_size
     max_chunks = settings.pdf_max_chunks
 
-    # ── Step 0: 文献结构分析（可选，短文本跳过）──
+    # ── Step 0: 报告结构分析（可选，短文本跳过）──
     structure_hint = ""
     if len(pdf_text) > chunk_size:
         try:
@@ -47,7 +47,7 @@ def extraction_agent(state: ExtractionState) -> dict:
                 col_desc, chunk, chunk_label, structure_hint, hints
             )
             system = (
-                "你是一名文献数据提取专家。只返回 JSON 数组。"
+                "你是一名检测报告数据提取专家。只返回 JSON 数组。"
                 "严格遵循提取规则，不编造数据。"
             )
             response = call_llm(prompt, system=system)
@@ -97,18 +97,19 @@ def _chunk_text(text: str, chunk_size: int, max_chunks: int) -> List[str]:
 
 
 def _analyze_structure(text_head: str, columns: List[dict]) -> str:
-    """让 LLM 分析论文结构，生成提取指引。
+    """让 LLM 先建立文档的整体结构认知，再逐块提取。
 
-    这一步复刻了 Skill 中 "Step 2: 分析文献结构" 的设计。
+    报告类文档的字段分散在「样品信息」「检测结果表」「结论」几个区域，
+    先让模型看清整体布局，比直接切块抽取的命中率高。
     """
     col_names = [c["col_name"] for c in columns]
     prompt = (
-        "你是一名文献数据分析师。请先阅读以下论文文本的开头部分，"
+        "你是一名检测报告结构分析师。请先阅读以下报告文本的开头部分，"
         "然后回答三个问题：\n\n"
-        f"论文文本：\n{text_head}\n\n"
+        f"报告文本：\n{text_head}\n\n"
         "请简要回答：\n"
-        "1. 这篇论文做了哪些实验？（列出实验组/处理）\n"
-        "2. 每个实验的关键数据（产气量、甲烷、TS/VS、降解率等）出现在文本的什么位置？\n"
+        "1. 这份报告包含哪些样品或检测批次？（列出样品编号）\n"
+        "2. 检测项目和数值所在的表格出现在文本的什么位置？\n"
         f"3. 这些数据对应模板中的哪些列？模板列：{col_names}\n\n"
         "用中文简要回答，不超过300字。"
     )
@@ -125,18 +126,18 @@ def _build_chunk_prompt(
 ) -> str:
     """构建单个分块的提取 prompt。"""
     parts = [
-        f"你正在提取文献数据（{chunk_label}）。请从以下文本片段中提取实验数据。\n",
+        f"你正在提取检测报告数据（{chunk_label}）。请从以下文本片段中提取检测项数据。\n",
     ]
 
     if structure_hint:
         parts.extend([
-            "## 论文结构分析（供参考）\n",
+            "## 报告结构分析（供参考）\n",
             structure_hint,
             "\n",
         ])
 
     parts.extend([
-        "## 模板列定义（只填文献中明确报告的值，未报告则留空）\n",
+        "## 模板列定义（只填报告中明确写出的值，未写出则留空）\n",
         col_desc,
         "\n## 当前文本片段\n",
         chunk_text,
@@ -152,8 +153,8 @@ def _build_chunk_prompt(
 
     parts.extend([
         "\n## 输出格式\n",
-        'JSON数组：[{"sequence_id": "A1", "values": {"列名": "值"}, '
-        '"source_table": "Table X", "source_figure": "Figure Y", '
+        'JSON数组：[{"sequence_id": "S1-01", "values": {"列名": "值"}, '
+        '"source_table": "检测结果表", "source_figure": "第2页", '
         '"notes": "备注说明"}]',
         "\n只返回 JSON 数组。如果没有可提取的数据，返回 []。",
     ])
@@ -221,11 +222,11 @@ def _build_column_description(columns: List[dict]) -> str:
 
 def _extraction_rules() -> str:
     """提取规则。"""
-    return """1. 不编造数据：只填文献中明确报告的数据，未报告则留空。
-2. 分实验分行：不同实验/处理作为独立行，序号用 A1, A2, B1, B2 前缀。
-3. 数据来源追溯：source_table / source_figure 必填。
-4. 从图读取须在 notes 注明"从图X目测读取，可能存在±误差"。
-5. 单位：使用模板列定义中的单位，如需转换在 notes 说明。"""
+    return """1. 不编造数据：只填报告中明确写出的值，未写出则留空。
+2. 分项分行：每个检测项目作为独立行，同一份报告内用 S1-01, S1-02 编号。
+3. 来源追溯：source_table 填表格名称（如"检测结果表"），source_figure 填页码（如"第2页"）。
+4. 判定结论只抄不算：只记录报告原文的结论（合格/不合格/符合/不符合），不要根据限值自行推断。
+5. 单位：使用模板列定义中的单位，如需换算在 notes 中说明原始值与换算过程。"""
 
 
 def _post_process(

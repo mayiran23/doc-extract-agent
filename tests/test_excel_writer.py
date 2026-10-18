@@ -11,17 +11,17 @@ from agent.tools.excel_writer import ExcelWriter
 # ═══ 测试数据 ═══
 
 SAMPLE_COLUMNS = [
-    {"col_name": "TS", "semantic_type": "substrate_property", "unit": "%"},
-    {"col_name": "VS", "semantic_type": "substrate_property", "unit": "%"},
-    {"col_name": "pH", "semantic_type": "condition", "unit": ""},
-    {"col_name": "温度(°C)", "semantic_type": "condition", "unit": "°C"},
+    {"col_name": "铅含量", "semantic_type": "measured_value", "unit": "%"},
+    {"col_name": "镉含量", "semantic_type": "measured_value", "unit": "%"},
+    {"col_name": "pH", "semantic_type": "measured_value", "unit": ""},
+    {"col_name": "温度(°C)", "semantic_type": "measured_value", "unit": "°C"},
 ]
 
 SAMPLE_ROWS = [
     {
         "paper_id": "paper_001",
         "sequence_id": "A1",
-        "values": {"TS": "8.5", "VS": "82.3", "pH": "7.2", "温度(°C)": "37"},
+        "values": {"铅含量": "8.5", "镉含量": "82.3", "pH": "7.2", "温度(°C)": "37"},
         "source_table": "Table 1",
         "source_figure": "",
         "citation": "Author. Title[J]. Journal, 2024, 1(1): 1-10. DOI: 10.1234/test",
@@ -30,7 +30,7 @@ SAMPLE_ROWS = [
     {
         "paper_id": "paper_001",
         "sequence_id": "A2",
-        "values": {"TS": "8.5", "VS": "82.3", "pH": "7.2", "温度(°C)": "37"},
+        "values": {"铅含量": "8.5", "镉含量": "82.3", "pH": "7.2", "温度(°C)": "37"},
         "source_table": "Table 2",
         "source_figure": "",
         "citation": "Author. Title[J]. Journal, 2024, 1(1): 1-10. DOI: 10.1234/test",

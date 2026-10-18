@@ -11,15 +11,15 @@ from agent.nodes.template_agent import template_agent
 # ═══ Mock 数据 ═══
 
 MOCK_LLM_COLUMNS_RESPONSE = json.dumps([
-    {"col_name": "TS", "semantic_type": "substrate_property",
+    {"col_name": "铅含量", "semantic_type": "measured_value",
      "unit": "%", "description": "总固体含量", "expected_range": "0-100"},
-    {"col_name": "VS", "semantic_type": "substrate_property",
+    {"col_name": "镉含量", "semantic_type": "measured_value",
      "unit": "%", "description": "挥发性固体含量", "expected_range": "0-100"},
-    {"col_name": "pH", "semantic_type": "condition",
+    {"col_name": "pH", "semantic_type": "measured_value",
      "unit": "", "description": "pH值", "expected_range": "0-14"},
 ])
 
-MOCK_COLUMN_NAMES = ["TS", "VS", "pH"]
+MOCK_COLUMN_NAMES = ["铅含量", "镉含量", "pH"]
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def nl_state():
     """自然语言模式的初始 State。"""
     return {
         "excel_path": "",
-        "natural_language_query": "提取厌氧发酵文献中的TS、VS、pH数据",
+        "natural_language_query": "提取水质检测报告中的TS、VS、pH数据",
         "template_source": "natural_language",
         "columns": [],
         "template_confirmed": False,
@@ -52,7 +52,7 @@ class TestTemplateAgent:
     def test_pass_through_when_confirmed(self, excel_state):
         """模板已确认时应跳过分析，返回空字典。"""
         excel_state["template_confirmed"] = True
-        excel_state["columns"] = [{"col_name": "TS", "semantic_type": "substrate_property"}]
+        excel_state["columns"] = [{"col_name": "铅含量", "semantic_type": "measured_value"}]
 
         result = template_agent(excel_state)
         assert result == {}
@@ -88,7 +88,7 @@ class TestTemplateAgentExcelMode:
         result = template_agent(excel_state)
         assert "columns" in result
         assert len(result["columns"]) == 3
-        assert result["columns"][0]["col_name"] == "TS"
+        assert result["columns"][0]["col_name"] == "铅含量"
 
     @patch("agent.nodes.template_agent.call_llm")
     @patch("agent.nodes.template_agent.extract_headers")
@@ -115,16 +115,16 @@ class TestTemplateAgentExcelMode:
         mock_headers.return_value = MOCK_COLUMN_NAMES
         mock_sample_rows.return_value = []
         mock_llm.return_value = json.dumps([
-            {"col_name": "TS", "semantic_type": "substrate_property",
+            {"col_name": "铅含量", "semantic_type": "measured_value",
              "unit": "%", "description": "总固体"},
-            {"col_name": "VS", "semantic_type": "substrate_property",
+            {"col_name": "镉含量", "semantic_type": "measured_value",
              "unit": "%", "description": "挥发性固体"},
         ])
 
         result = template_agent(excel_state)
         assert len(result["columns"]) == 3
         col_names = [c["col_name"] for c in result["columns"]]
-        assert col_names == ["TS", "VS", "pH"]
+        assert col_names == ["铅含量", "镉含量", "pH"]
         ph_col = [c for c in result["columns"] if c["col_name"] == "pH"][0]
         assert ph_col["semantic_type"] == ""
 
@@ -135,19 +135,19 @@ class TestTemplateAgentExcelMode:
         self, mock_sample_rows, mock_headers, mock_llm, excel_state
     ):
         """LLM 改了列名时强制使用原始列名。"""
-        mock_headers.return_value = ["TS", "pH"]
+        mock_headers.return_value = ["铅含量", "pH"]
         mock_sample_rows.return_value = []
         mock_llm.return_value = json.dumps([
-            {"col_name": "Total_Solids", "semantic_type": "substrate_property",
+            {"col_name": "Total_Solids", "semantic_type": "measured_value",
              "unit": "%", "description": "total"},
-            {"col_name": "pH", "semantic_type": "condition",
+            {"col_name": "pH", "semantic_type": "measured_value",
              "unit": "", "description": "pH"},
         ])
 
         result = template_agent(excel_state)
         col_names = [c["col_name"] for c in result["columns"]]
-        assert col_names == ["TS", "pH"]
-        ts_col = [c for c in result["columns"] if c["col_name"] == "TS"][0]
+        assert col_names == ["铅含量", "pH"]
+        ts_col = [c for c in result["columns"] if c["col_name"] == "铅含量"][0]
         assert ts_col["semantic_type"] == ""
 
 
@@ -175,7 +175,7 @@ class TestTemplateAgentNLMode:
     def test_nl_single_column_dict_response(self, mock_llm, nl_state):
         """LLM 返回单个 dict（而非列表）时应自动包装为列表。"""
         single_col = json.dumps({
-            "col_name": "pH", "semantic_type": "condition",
+            "col_name": "pH", "semantic_type": "measured_value",
             "unit": "", "description": "pH值", "expected_range": "0-14",
         })
         mock_llm.return_value = single_col

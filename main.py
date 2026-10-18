@@ -1,8 +1,8 @@
-"""CLI 批量处理入口 — 从命令行运行文献数据提取。
+"""CLI 批量处理入口 — 从命令行运行检测报告数据提取。
 
 用法:
     python main.py --template data/sample_template.xlsx --pdfs ./papers/
-    python main.py --query "提取TS、VS、pH、温度、沼气产量" --pdfs ./papers/
+    python main.py --query "提取样品编号、检测项目、检测值、标准限值" --pdfs ./reports/
 """
 
 import argparse
@@ -16,7 +16,7 @@ from agent.tools.excel_writer import ExcelWriter
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="LangGraph 文献数据提取 Agent")
+    parser = argparse.ArgumentParser(description="LangGraph 检测报告数据提取 Agent")
     template = parser.add_mutually_exclusive_group(required=True)
     template.add_argument("--template", "-t", type=str, help="Excel 模板路径")
     template.add_argument("--query", "-q", type=str, help="自然语言需求描述")
@@ -41,10 +41,10 @@ def main():
     if not pdf_files:
         print(f"[ERROR] 未找到 PDF: {pdf_pattern}")
         sys.exit(1)
-    print(f"[INFO] {len(pdf_files)} 篇文献")
+    print(f"[INFO] {len(pdf_files)} 份报告")
 
     output_path = args.output or os.path.join(
-        "output", f"文献数据提取_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        "output", f"检测报告数据提取_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     )
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
@@ -108,7 +108,7 @@ def main():
 
     if all_rows:
         writer.write(all_rows, columns, output_path)
-        print(f"\n=== 完成: {len(pdf_files)} 文献, {len(all_rows)} 行 ===")
+        print(f"\n=== 完成: {len(pdf_files)} 报告, {len(all_rows)} 行 ===")
         print(f"结果: {output_path}")
     else:
         print("\n[WARN] 未提取到数据")

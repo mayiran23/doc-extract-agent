@@ -43,10 +43,8 @@ class Settings:
     # PDF 处理
     pdf_max_pages: int = 100  # 安全上限
     pdf_chunk_size: int = 10000  # 分块提取时每块的字符数
-    pdf_max_chunks: int = 8  # 单篇文献最多处理的块数（限制 API 调用量）
+    pdf_max_chunks: int = 8  # 单份报告最多处理的块数（限制 API 调用量）
 
-    # Crossref API（DOI 补全）
-    crossref_api_url: str = "https://api.crossref.org/works"
 
     @classmethod
     def from_env(cls) -> "Settings":

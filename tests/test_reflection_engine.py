@@ -46,8 +46,8 @@ class TestFallbackHints:
     def test_completeness_hint(self):
         """完整性问题的 hint 应建议扫描全文。"""
         issues = [{
-            "level": "completeness", "column": "VS", "row_index": 0,
-            "description": "VS 列未填充但文献中有报告", "severity": "warning",
+            "level": "completeness", "column": "镉含量", "row_index": 0,
+            "description": "VS 列未填充但报告中有报告", "severity": "warning",
         }]
         hints = _fallback_hints(issues)
         assert "扫描" in hints or "全文" in hints or "遗漏" in hints
