@@ -25,18 +25,9 @@
 
 ## 架构
 
-六个节点串行，最后一段是带次数上限的回环：
+![架构图](docs/architecture.svg)
 
-```
-template_agent → reading_agent → meta_agent → extraction_agent
-                                                    │
-                                          ┌─────────┼──────────┐
-                                          │ pass     │ reflect  │
-                                          ▼          ▼          │
-                                         END   reflection_engine│
-                                                     │          │
-                                                     └────loop──┘
-```
+六个节点串行，最后一段是带次数上限的回环：校验不通过 → 分析原因生成修正指令 → 回到抽取节点重来；超过 3 轮仍未通过则强制结束，输出带标记的结果。
 
 | 节点 | 干什么 |
 |---|---|
