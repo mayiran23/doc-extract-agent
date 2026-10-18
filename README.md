@@ -120,6 +120,27 @@ ui/                            # Streamlit 组件
 tests/                         # 规则层单测 + 图集成测试
 ```
 
+## 测试
+
+```bash
+pytest -q      # 85 passed
+```
+
+规则校验层不调用 LLM、不访问网络，**没有 API key 也能完整运行**。这是分层设计最实际的收益：核心的正确性判断不依赖模型状态，回归测试因此是确定性的、可重复的。
+
+覆盖范围：
+
+| 测试文件 | 覆盖内容 |
+|---|---|
+| `test_validation_engine.py` | 范围越界、负值、缺来源、多行一致性、非数值（"未检出"）不误报 |
+| `test_meta_agent.py` | 报告编号格式校验、空字段跳过、LLM 返回坏 JSON 时降级 |
+| `test_graph.py` | 六节点注册完整性、条件路由的三个出口（pass / reflect / force_end） |
+| `test_graph_integration.py` | 从入口到校验的完整链路 |
+| `test_extraction_agent.py` | 分块提取、合并去重、字段补齐 |
+| `test_template_agent.py` | Excel 表头与自然语言两种入口、列名强制保留 |
+| `test_reading_agent.py` / `test_excel_writer.py` | PDF 文本提取、xlsx 落盘 |
+| `test_state.py` / `test_reflection_engine.py` | 状态累加器、修正指令生成 |
+
 ## 已知局限
 
 - **扫描版 PDF 不支持**：没有文本层直接跳过，走 OCR 是另一条链路
