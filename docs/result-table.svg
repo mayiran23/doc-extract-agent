@@ -1,0 +1,81 @@
+<svg viewBox="0 0 880 372" width="880" xmlns="http://www.w3.org/2000/svg">
+<title>检测报告提取结果示例</title>
+<desc>从一份检测报告 PDF 中提取出的 8 行检测项目数据，含未检出值与混合单位</desc>
+
+<rect width="880" height="372" fill="#ffffff"/>
+
+<g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <text x="40" y="26" font-size="13" font-weight="600" fill="#2C2C2A">检测报告提取结果</text>
+  <text x="40" y="44" font-size="11" fill="#888780">输入：1 份 PDF（8 个检测项）　输出：output/检测报告提取结果.xlsx</text>
+
+  <rect x="40" y="58" width="800" height="30" fill="#F1EFE8"/>
+  <g font-size="11" font-weight="600" fill="#2C2C2A" text-anchor="middle">
+    <text x="70" y="77">序号</text>
+    <text x="155" y="77">样品编号</text>
+    <text x="260" y="77">检测项目</text>
+    <text x="350" y="77">检测值</text>
+    <text x="440" y="77">单位</text>
+    <text x="540" y="77">标准限值</text>
+    <text x="630" y="77">判定结论</text>
+    <text x="720" y="77">来源表格</text>
+    <text x="806" y="77">位置</text>
+  </g>
+
+  <g font-size="11" fill="#444441" text-anchor="middle">
+    <rect x="40" y="88" width="800" height="30" fill="#ffffff"/>
+    <text x="70" y="107">S1-01</text><text x="155" y="107">YP-2026-0087</text><text x="260" y="107">pH</text>
+    <text x="350" y="107">7.2</text><text x="440" y="107">无量纲</text><text x="540" y="107">6.5 ~ 8.5</text>
+    <text x="630" y="107" fill="#3B6D11">合格</text><text x="720" y="107">检测结果表</text><text x="806" y="107">第1页</text>
+
+    <rect x="40" y="118" width="800" height="30" fill="#FAFAF8"/>
+    <text x="70" y="137">S1-02</text><text x="155" y="137">YP-2026-0087</text><text x="260" y="137">铅</text>
+    <text x="350" y="137">0.008</text><text x="440" y="137">mg/L</text><text x="540" y="137">0.01</text>
+    <text x="630" y="137" fill="#3B6D11">合格</text><text x="720" y="137">检测结果表</text><text x="806" y="137">第1页</text>
+
+    <rect x="40" y="148" width="800" height="30" fill="#ffffff"/>
+    <text x="70" y="167">S1-03</text><text x="155" y="167">YP-2026-0087</text><text x="260" y="167">镉</text>
+    <text x="350" y="167">0.003</text><text x="440" y="167">mg/L</text><text x="540" y="167">0.005</text>
+    <text x="630" y="167" fill="#3B6D11">合格</text><text x="720" y="167">检测结果表</text><text x="806" y="167">第1页</text>
+
+    <rect x="40" y="178" width="800" height="30" fill="#FAFAF8"/>
+    <text x="70" y="197">S1-04</text><text x="155" y="197">YP-2026-0087</text><text x="260" y="197">砷</text>
+    <text x="350" y="197">0.009</text><text x="440" y="197">mg/L</text><text x="540" y="197">0.01</text>
+    <text x="630" y="197" fill="#3B6D11">合格</text><text x="720" y="197">检测结果表</text><text x="806" y="197">第1页</text>
+
+    <rect x="40" y="208" width="800" height="30" fill="#ffffff"/>
+    <text x="70" y="227">S1-05</text><text x="155" y="227">YP-2026-0087</text><text x="260" y="227">汞</text>
+    <text x="350" y="227" fill="#854F0B">未检出</text><text x="440" y="227">mg/L</text><text x="540" y="227">0.001</text>
+    <text x="630" y="227" fill="#3B6D11">合格</text><text x="720" y="227">检测结果表</text><text x="806" y="227">第1页</text>
+
+    <rect x="40" y="238" width="800" height="30" fill="#FAFAF8"/>
+    <text x="70" y="257">S1-06</text><text x="155" y="257">YP-2026-0087</text><text x="260" y="257">菌落总数</text>
+    <text x="350" y="257">12</text><text x="440" y="257">CFU/mL</text><text x="540" y="257">≤ 100</text>
+    <text x="630" y="257" fill="#3B6D11">合格</text><text x="720" y="257">检测结果表</text><text x="806" y="257">第1页</text>
+
+    <rect x="40" y="268" width="800" height="30" fill="#ffffff"/>
+    <text x="70" y="287">S1-07</text><text x="155" y="287">YP-2026-0087</text><text x="260" y="287">总大肠菌群</text>
+    <text x="350" y="287" fill="#854F0B">未检出</text><text x="440" y="287">CFU/100mL</text><text x="540" y="287">不得检出</text>
+    <text x="630" y="287" fill="#3B6D11">合格</text><text x="720" y="287">检测结果表</text><text x="806" y="287">第1页</text>
+
+    <rect x="40" y="298" width="800" height="30" fill="#FAFAF8"/>
+    <text x="70" y="317">S1-08</text><text x="155" y="317">YP-2026-0087</text><text x="260" y="317">浑浊度</text>
+    <text x="350" y="317">0.6</text><text x="440" y="317">NTU</text><text x="540" y="317">1</text>
+    <text x="630" y="317" fill="#3B6D11">合格</text><text x="720" y="317">检测结果表</text><text x="806" y="317">第1页</text>
+  </g>
+
+  <g stroke="#D3D1C7" stroke-width="0.5" fill="none">
+    <rect x="40" y="58" width="800" height="270"/>
+    <line x1="40" y1="88" x2="840" y2="88"/>
+    <line x1="100" y1="58" x2="100" y2="328"/>
+    <line x1="210" y1="58" x2="210" y2="328"/>
+    <line x1="310" y1="58" x2="310" y2="328"/>
+    <line x1="390" y1="58" x2="390" y2="328"/>
+    <line x1="490" y1="58" x2="490" y2="328"/>
+    <line x1="590" y1="58" x2="590" y2="328"/>
+    <line x1="670" y1="58" x2="670" y2="328"/>
+    <line x1="770" y1="58" x2="770" y2="328"/>
+  </g>
+
+  <text x="40" y="352" font-size="11" fill="#888780">「未检出」保持原样而非填 0；「≤ 100」「不得检出」这类非数字限值完整保留；单位未串行。</text>
+</g>
+</svg>

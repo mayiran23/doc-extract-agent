@@ -98,6 +98,28 @@ streamlit run app.py           # Web 界面
 python main.py --template template.xlsx --pdfs ./reports/ -o result.xlsx
 ```
 
+## 运行示例
+
+```bash
+$ python main.py --query "提取样品编号、检测项目、检测值、单位、标准限值、判定结论" --pdfs ./reports/
+
+[INFO] NL 查询: 提取样品编号、检测项目、检测值、单位、标准限值、判定结论
+[INFO] 1 份报告
+[INFO] 编译 LangGraph...
+[INFO] 分析模板...
+[INFO] 识别 6 列
+
+[1/1] 处理: 检测报告.pdf
+  [OK] 8 行
+
+=== 完成: 1 报告, 8 行 ===
+结果: output/检测报告提取结果.xlsx
+```
+
+![提取结果](docs/result-table.svg)
+
+示例报告可直接用仓库里的 [`samples/inspection-report-sample.html`](samples/inspection-report-sample.html)，用 Word 或 WPS 打开后另存为 PDF 即可（**不要用浏览器的“另存为 PDF”**，部分驱动会把字体转成图形，导致文本层为空）。
+
 ## 项目结构
 
 ```
@@ -135,6 +157,7 @@ pytest -q      # 85 passed
 ## 已知局限
 
 - **扫描版 PDF 不支持**：没有文本层直接跳过，走 OCR 是另一条链路
+- **字体转曲的 PDF 同样读不出字**：部分「另存为 PDF」工具会把文字转成矢量轮廓，文件看着正常但 `chars` 为 0。用 Word / WPS 导出可以避开
 - **跨页表格**：同一张表被分页切断时，合并依赖 LLM 判断，偶有漏行
 - **单位换算**：只做识别不做换算，报告里写 μg/L、模板要 mg/L 时会原样保留并在 notes 标注
 - **并发**：单文件串行处理，多份报告是排队跑的
