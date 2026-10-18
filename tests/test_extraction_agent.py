@@ -155,10 +155,11 @@ class TestPostProcess:
         assert result[1]["sequence_id"] == "A2"
         assert result[2]["sequence_id"] == "B1"
 
-    def test_figure_reading_annotation(self):
-        rows = [{"values": {"铅含量": "85"}, "source_figure": "Figure 3", "notes": ""}]
+    def test_no_figure_reading_annotation(self):
+        """检测报告的数据是印在纸上的，不应自动补「目测读取」标注。"""
+        rows = [{"values": {"铅含量": "85"}, "source_figure": "第1页", "notes": ""}]
         result = _post_process(rows, "test", SAMPLE_COLS)
-        assert "目测读取" in result[0]["notes"]
+        assert "目测" not in result[0]["notes"]
 
     def test_no_fabrication(self):
         rows = [{"values": {"铅含量": "8.5"}}]

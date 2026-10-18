@@ -120,4 +120,33 @@ def _analyze_from_nl(state: ExtractionState) -> list:
 
     if isinstance(columns, dict):
         columns = [columns]
-    return columns
+    return _normalize_columns(columns or [])
+
+
+def _normalize_columns(columns: list) -> list:
+    """把 LLM 返回的列定义规范化。
+
+    LLM 可能用 name / column 代替 col_name，也可能混入非字典元素。
+    这里统一成下游可以安全取值的结构，缺列名或列名重复的直接丢弃。
+    """
+    normalized = []
+    seen = set()
+    for col in columns:
+        if not isinstance(col, dict):
+            continue
+
+        name = col.get("col_name") or col.get("name") or col.get("column") or ""
+        name = str(name).strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+
+        normalized.append({
+            "col_name": name,
+            "semantic_type": str(col.get("semantic_type", "metadata") or "metadata"),
+            "unit": str(col.get("unit", "") or ""),
+            "description": str(col.get("description", "") or ""),
+            "expected_range": str(col.get("expected_range", "") or ""),
+        })
+
+    return normalized

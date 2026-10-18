@@ -66,9 +66,9 @@ class ExcelWriter:
         ws = wb.active
         ws.title = sheet_name
 
-        # 构建列顺序：序号 + 所有模板列 + 数据来源 + 图表 + 图表2 + 备注
+        # 构建列顺序：序号 + 所有模板列 + 来源表格 + 来源位置 + 备注
         col_names = [c["col_name"] for c in columns]
-        ordered_headers = ["序号"] + col_names + ["数据来源", "图表", "图表2", "备注"]
+        ordered_headers = ["序号"] + col_names + ["来源表格", "来源位置", "备注"]
 
         # ── 写入表头 ──
         for col_idx, header in enumerate(ordered_headers, start=1):
@@ -92,25 +92,20 @@ class ExcelWriter:
                 is_long = col_name in self.LONG_TEXT_COLUMNS
                 self._apply_data_style(cell, is_long_text=is_long)
 
-            # 数据来源列
-            source_col = len(col_names) + 2
-            source_cell = ws.cell(row=row_idx, column=source_col,
-                                  value=row.get("citation", ""))
-            self._apply_data_style(source_cell, is_long_text=True)
+            # 来源表格列
+            table_col = len(col_names) + 2
+            table_cell = ws.cell(row=row_idx, column=table_col,
+                                 value=row.get("source_table", ""))
+            self._apply_data_style(table_cell, is_long_text=False)
 
-            # 图表列
-            fig_col = len(col_names) + 3
-            fig_cell = ws.cell(row=row_idx, column=fig_col,
-                               value=row.get("source_table", "") or row.get("source_figure", ""))
-            self._apply_data_style(fig_cell, is_long_text=True)
-
-            # 图表2列
-            fig2_col = len(col_names) + 4
-            fig2_cell = ws.cell(row=row_idx, column=fig2_col, value="")
-            self._apply_data_style(fig2_cell, is_long_text=True)
+            # 来源位置列
+            where_col = len(col_names) + 3
+            where_cell = ws.cell(row=row_idx, column=where_col,
+                                 value=row.get("source_figure", ""))
+            self._apply_data_style(where_cell, is_long_text=False)
 
             # 备注列
-            notes_col = len(col_names) + 5
+            notes_col = len(col_names) + 4
             notes_cell = ws.cell(row=row_idx, column=notes_col, value=row.get("notes", ""))
             self._apply_data_style(notes_cell, is_long_text=True)
 

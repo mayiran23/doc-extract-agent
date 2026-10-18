@@ -129,7 +129,7 @@ class TestDataFormatting:
         wb = openpyxl.load_workbook(path)
         ws = wb.active
 
-        notes_col = len(SAMPLE_COLUMNS) + 5  # 序号 + N列 + 数据来源 + 图表 + 图表2 + 备注
+        notes_col = len(SAMPLE_COLUMNS) + 4  # 序号 + N列 + 来源表格 + 来源位置 + 备注
         cell = _get_cell(ws, 2, notes_col)
         assert cell.alignment.horizontal == "left"
         assert cell.alignment.wrap_text is True

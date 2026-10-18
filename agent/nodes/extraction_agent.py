@@ -232,7 +232,7 @@ def _extraction_rules() -> str:
 def _post_process(
     rows: List[dict], paper_id: str, columns: List[dict]
 ) -> List[dict]:
-    """后处理：注入 paper_id、分配序号、检查 figure-reading 标注。"""
+    """后处理：注入 paper_id、补齐序号、去重。"""
     col_names = [c["col_name"] for c in columns]
     processed = []
     exp_prefixes = {}
@@ -267,14 +267,6 @@ def _post_process(
                 if (r.get("sequence_id") or "").startswith(prefix)
             )
             row["sequence_id"] = f"{prefix}{count + 1}"
-
-        notes = row.get("notes", "")
-        figure_ref = row.get("source_figure", "")
-        if figure_ref and "目测读取" not in notes:
-            notes = notes + ("；" if notes else "") + (
-                f"从{figure_ref}目测读取，可能存在±误差"
-            )
-            row["notes"] = notes
 
         processed.append(row)
 
