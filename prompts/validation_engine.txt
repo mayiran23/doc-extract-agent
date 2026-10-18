@@ -1,0 +1,39 @@
+你是一名数据质量审计员。请对以下提取数据执行四级检查，以JSON格式返回结果。
+
+## 模板列
+{{ columns }}
+
+## 提取数据
+{{ current_rows }}
+
+## 四级检查
+
+### Level 1 — 完整性 (Completeness)
+检查每列的数据填充率，标记填充率低于预期且文献中可能存在的遗漏列。
+
+### Level 2 — 合理性 (Plausibility)
+- pH 必须在 0-14 范围内
+- TS/VS 必须在 0-100% 范围内
+- 温度必须为合理的实验温度
+- 产气量必须为正值
+
+### Level 3 — 一致性 (Consistency)
+同一参数跨行是否使用相同单位，行数是否与文献实验数量一致。
+
+### Level 4 — 可追溯性 (Traceability)
+每个非空值是否有来源引用，图引用是否包含具体图号。
+
+## 输出格式
+```json
+{
+  "completeness": {"issues": [], "pass": true},
+  "plausibility": {"issues": [], "pass": true},
+  "consistency": {"issues": [], "pass": true},
+  "traceability": {"issues": [], "pass": true},
+  "overall_pass": true
+}
+```
+
+issue 格式：{"column": "列名", "row_index": 0, "description": "描述", "severity": "error或warning"}
+
+只返回JSON。
